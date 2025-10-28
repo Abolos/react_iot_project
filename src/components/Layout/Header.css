@@ -1,0 +1,47 @@
+#header {
+  height: 150px;
+  background-image: url("../../assets/images/backgrounAvatar.jpg");
+  background-attachment: fixed;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#header .avatar-user {
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-right: 2px solid white;
+}
+
+#header .avatar-user div h3 {
+  color: white;
+}
+
+#header .avatar-user div p img {
+  width: 50px;
+  border-radius: 100%;
+}
+
+#header .header-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+#header .header-banner div p a {
+  color: white;
+  font-size: 30px;
+  position: relative;
+}
+
+#header .header-banner .header-inform p a span {
+  position: absolute;
+  font-size: 15px;
+  top: 0;
+  padding: 0px 8px;
+  background: red;
+  border-radius: 50%;
+}

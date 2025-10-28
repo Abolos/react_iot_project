@@ -1,0 +1,7 @@
+#form-add-user table tr td input{
+    outline: none;
+    border: 1px solid black;
+    width: 100%;
+    padding-left: 10px;
+
+}

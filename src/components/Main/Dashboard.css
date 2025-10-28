@@ -1,0 +1,62 @@
+#data-dashboard .temperature p {
+  display: block;
+  width: 150px;
+  height: 150px;
+  line-height: 120px;
+  border: 15px solid #5AC7EE;
+  border-radius: 100%;
+  font-size: 25px;
+  font-weight: bold;
+  margin: auto;
+  text-align: center;
+}
+
+#data-dashboard .ground-persent p {
+  display: block;
+  width: 150px;
+  height: 150px;
+  line-height: 120px;
+  border: 15px solid #99EF77;
+  border-radius: 100%;
+  font-size: 25px;
+  font-weight: bold;
+  margin: auto;
+  text-align: center;
+}
+
+#data-dashboard .air-persent p {
+  display: block;
+  width: 150px;
+  height: 150px;
+  line-height: 120px;
+  border: 15px solid #FFDE59;
+  border-radius: 100%;
+  font-size: 25px;
+  font-weight: bold;
+  margin: auto;
+  text-align: center;
+}
+
+#data-dashboard .temperature-h4 {
+  margin-top: 15px;
+  font-size: 30px;
+  font-style: italic;
+  font-weight: bolder;
+  color: #852EAB;
+}
+
+#data-dashboard .air-persent-h4 {
+  margin-top: 15px;
+  font-size: 30px;
+  font-style: italic;
+  font-weight: bolder;
+  color: #492eab;
+}
+
+#data-dashboard .ground-persent-h4 {
+  margin-top: 15px;
+  font-size: 30px;
+  font-style: italic;
+  font-weight: bolder;
+  color: #ab2e58;
+}

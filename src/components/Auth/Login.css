@@ -1,0 +1,84 @@
+#login {
+    background: linear-gradient(to top right, #8e248c, #ff7e5f, #feb47b);
+    background-size:cover;
+    background-repeat: no-repeat;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#form-login {
+    padding:20px 40px;
+    border-radius: 10px;
+    background-color: rgba(245, 243, 240, 0.5);
+    width: 500px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#form-login .image-avatar {
+    text-align: center;
+    font-size: 70px;
+    color: aliceblue;
+}
+
+#form-login .input-group{
+    width: 100%;
+    height: 40px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#form-login .input-group label {
+    background-color: rgb(215, 220, 224);
+    height: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+#form-login .input-group label i {
+    line-height: 50px;
+}
+
+#form-login .input-group input {
+    width: 380px;
+    border: none;
+    height: 40px;
+    padding-left: 10px;
+    outline: none;
+}
+
+
+#form-login .remember-me {
+    display: flex;
+    width: 100%;
+    justify-content: space-around;
+}
+
+
+#form-login .remember-me p {
+    color: black;
+    font-size: 15px;
+}
+
+#form-login .remember-me p input {
+    width: 15px;
+    height: 15px;
+}
+
+#form-login .remember-me p a {
+    color: black;
+}
+
+#form-login button{
+    width: 250px;
+    border: none;
+    height: 35px;
+    font-size: 20px;
+    display: block;
+    margin: auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+

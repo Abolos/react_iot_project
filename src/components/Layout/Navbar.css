@@ -1,0 +1,82 @@
+#navbar {
+  background-color: white;
+  width: 100%;
+  padding: 40px 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  height: 70vh;
+}
+
+#search-sidebar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+#search-sidebar i {
+  padding: 4px;
+  display: block;
+  width: 40px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background-color: gray;
+  color: white;
+}
+
+#search-sidebar input {
+  border: none;
+  outline: none;
+  padding-left: 10px;
+  width: 90%;
+  margin-left: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#button-sidebar {
+  margin-top: 40px;
+}
+
+#button-sidebar p {
+  width: 100%;
+  display: block;
+  padding: 5px;
+  background: linear-gradient(to top right, #8687c1, #7a88d5);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 10px;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+#button-sidebar p a {
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  text-decoration: none;
+  display: block;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+/* Style cho link thông thường */
+#button-sidebar p a {
+  background: linear-gradient(to top right, #8687c1, #7a88d5);
+}
+
+/* Style cho link khi active */
+#button-sidebar p a.active {
+  background: linear-gradient(to top right, #ff6b6b, #ff8e8e);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Hiệu ứng hover */
+#button-sidebar p a:hover:not(.active) {
+  background: linear-gradient(to top right, #9a9bd1, #8c9ae0);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Thêm icon indicator cho active state */
+#button-sidebar p a.active::before {
+  margin-right: 8px;
+  font-size: 14px;
+}
