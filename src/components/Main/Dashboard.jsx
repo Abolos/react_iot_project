@@ -28,7 +28,7 @@ function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [autoCreateEnabled, setAutoCreateEnabled] = useState(true); // State để theo dõi trạng thái
 
-  const API_BASE = "http://10.20.42.178";
+  const API_BASE = "http://10.195.173.178";
 
   // Hàm tạo data - được sử dụng bởi cả component và global interval
   const createData = async (source = "component") => {
@@ -280,7 +280,7 @@ function Dashboard() {
     const isOnline = sensorData.device_mode === "Online";
     return (
       <div className={`alert ${isOnline ? "alert-success" : "alert-warning"}`}>
-        {isOnline ? "🟢 Online" : "🟡 Offline"} | IP: 10.20.42.178
+        {isOnline ? "🟢 Online" : "🟡 Offline"} | IP: 10.195.173.178
       </div>
     );
   };
