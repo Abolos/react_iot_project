@@ -7,7 +7,7 @@ function Navbar() {
     <div id="navbar">
       <div id="button-sidebar">
         <p>
-          <NavLink to={'/dashboard'}>
+          <NavLink to={'/'}>
             <i className="fa-solid fa-house"></i> Dashboard
           </NavLink>
         </p>

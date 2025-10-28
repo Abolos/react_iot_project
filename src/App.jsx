@@ -25,7 +25,7 @@ function App() {
       <ToastContainer />
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/" element={<Dashboard />} />
         <Route path="/users/admin" element={<UserAdmin />} />
         <Route path="/users/admin/store" element={<CreateUser />} />
         <Route path="/users/admin/update/:id" element={<UpdateUser />} />

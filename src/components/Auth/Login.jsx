@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { LOGIN_API_URL } from "../Services/common";
 import { toast } from "react-toastify";
 import "./Login.css";
-
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +35,7 @@ function Login() {
                     autoClose: 5000,
                 })
       // Điều hướng tới trang /dashboard
-      navigate("/dashboard");
+      navigate("/");
     } catch (error) {
       console.error("Error:", error);
     }

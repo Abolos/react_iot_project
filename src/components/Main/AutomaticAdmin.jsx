@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Header from "../Layout/Header";
 import Navbar from "../Layout/Navbar";
 import "./Dashboard.css";
+
 function AutomaticAdmin() {
   const [onOff, setOnOff] = useState(false);
   const handelOnOff = () => {
