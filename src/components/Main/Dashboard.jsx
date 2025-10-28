@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import Header from "../Layout/header";
+import Header from "../Layout/Header";
 import Navbar from "../Layout/Navbar";
 import "./Dashboard.css";
 import { API_DATAS_ADMIN } from "../Services/common";

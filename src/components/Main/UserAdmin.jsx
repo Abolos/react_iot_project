@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Header from "../Layout/header";
+import Header from "../Layout/Header";
 import Navbar from "../Layout/Navbar";
 import { API_USERS_ADMIN } from "../Services/common";
 import { Link } from "react-router-dom";

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../../Layout/Navbar";
-import Header from "../../Layout/header";
+import Header from "../../Layout/Header";
 import { useNavigate, useParams } from "react-router-dom";
 import "./StyleTemplete.css";
 import { API_TEMPLETES_ADMIN } from "../../Services/common";
