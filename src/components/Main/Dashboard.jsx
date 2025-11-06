@@ -5,7 +5,7 @@ import "./Dashboard.css";
 import { API_DATAS_ADMIN } from "../Services/common";
 import { toast } from "react-toastify";
 
-// Biến toàn cục để quản lý interval - sẽ tiếp tục chạy ngay cả khi component unmount
+// Biến toàn cục để quản lý interval
 let globalInterval = null;
 let isGlobalIntervalRunning = false;
 
@@ -26,11 +26,18 @@ function Dashboard() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [autoCreateEnabled, setAutoCreateEnabled] = useState(true); // State để theo dõi trạng thái
+  const [autoCreateEnabled, setAutoCreateEnabled] = useState(true);
 
-  const API_BASE = "http://10.195.173.178";
+  // ThingSpeak Configuration
+  const THINGSPEAK_CHANNEL_ID = "3147158";
+  const THINGSPEAK_READ_API_KEY = "KJUWWQ7XIZ0K40QV";
+  const THINGSPEAK_WRITE_API_KEY = "EDYLP733EV41CFH0";
+  
+  const THINGSPEAK_API_BASE = "https://api.thingspeak.com";
+  const THINGSPEAK_FEED_URL = `${THINGSPEAK_API_BASE}/channels/${THINGSPEAK_CHANNEL_ID}/feeds.json`;
+  const THINGSPEAK_UPDATE_URL = `${THINGSPEAK_API_BASE}/update`;
 
-  // Hàm tạo data - được sử dụng bởi cả component và global interval
+  // Hàm tạo data
   const createData = async (source = "component") => {
     try {
       const newData = {
@@ -44,38 +51,25 @@ function Dashboard() {
 
       const response = await fetch(`${API_DATAS_ADMIN}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newData),
       });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+      if (!response.ok) throw new Error("Network response was not ok");
 
       const result = await response.json();
-      
-      // Chỉ hiển thị toast khi gọi từ component (tránh spam khi ở background)
+
       if (source === "component") {
-        toast.success(`${result.message}`, {
-          position: "top-right",
-          autoClose: 5000,
-        });
+        toast.success(`${result.message}`, { position: "top-right", autoClose: 5000 });
       }
-      
+
       console.log(`✅ [${source}] Tạo data thành công:`, result.message);
       setData(newData);
-      
     } catch (error) {
       console.error(`❌ [${source}] Lỗi khi tạo data:`, error);
       setError(error);
-      
       if (source === "component") {
-        toast.error("Lỗi khi tạo dữ liệu!", {
-          position: "top-right",
-          autoClose: 5000,
-        });
+        toast.error("Lỗi khi tạo dữ liệu!", { position: "top-right", autoClose: 5000 });
       }
     }
   };
@@ -83,21 +77,16 @@ function Dashboard() {
   // Khởi động global interval
   const startGlobalInterval = () => {
     if (!globalInterval && autoCreateEnabled) {
-      console.log("🔄 Khởi động global interval (30s)");
-      
+      console.log("🔄 Khởi động global interval (1 giờ)");
       globalInterval = setInterval(async () => {
-        // Lấy sensorData từ localStorage nếu component unmount
         let currentSensorData = sensorData;
         try {
-          const storedData = localStorage.getItem('currentSensorData');
-          if (storedData) {
-            currentSensorData = JSON.parse(storedData);
-          }
+          const storedData = localStorage.getItem("currentSensorData");
+          if (storedData) currentSensorData = JSON.parse(storedData);
         } catch (e) {
           console.log("Không thể lấy sensorData từ localStorage");
         }
 
-        // Tạo data với sensorData hiện tại
         const backgroundData = {
           templeteName_id: "68fba0eda371a92173941a1e",
           tempreature: currentSensorData.temperature,
@@ -111,16 +100,14 @@ function Dashboard() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(backgroundData),
           });
-
           if (response.ok) {
             const result = await response.json();
-            console.log('✅ [Background] Data created:', result.message);
+            console.log("✅ [Background] Data created:", result.message);
           }
         } catch (error) {
-          console.error('❌ [Background] Error:', error);
+          console.error("❌ [Background] Error:", error);
         }
       }, 3600000);
-
       isGlobalIntervalRunning = true;
     }
   };
@@ -140,54 +127,63 @@ function Dashboard() {
     if (autoCreateEnabled) {
       stopGlobalInterval();
       setAutoCreateEnabled(false);
-      toast.info("🛑 Đã tắt tự động tạo dữ liệu", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.info("🛑 Đã tắt tự động tạo dữ liệu", { position: "top-right", autoClose: 3000 });
     } else {
       setAutoCreateEnabled(true);
       startGlobalInterval();
-      toast.info("🔄 Đã bật tự động tạo dữ liệu", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.info("🔄 Đã bật tự động tạo dữ liệu", { position: "top-right", autoClose: 3000 });
     }
   };
 
-  // Fetch data từ ESP8266
+  // Fetch data từ ThingSpeak - SỬA PHẦN NÀY
   const fetchSensorData = async () => {
     try {
-      console.log("🔄 Đang kết nối đến ESP...");
-
-      const response = await fetch(`${API_BASE}/data`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      console.log("🔄 Đang kết nối đến ThingSpeak...");
+      
+      // Lấy nhiều kết quả hơn để tìm entry có dữ liệu
+      const url = `${THINGSPEAK_FEED_URL}?api_key=${THINGSPEAK_READ_API_KEY}&results=10`;
+      
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const data = await response.json();
-      console.log("✅ Dữ liệu nhận được:", data);
+      console.log("✅ Dữ liệu nhận được từ ThingSpeak:", data);
 
-      const newSensorData = {
-        temperature: data.temperature || 0,
-        air_humidity: data.air_humidity || 0,
-        soil_humidity: data.soil_humidity || 0,
-        soil_analog: data.soil_analog || 0,
-        device_mode: data.device_mode || "Offline",
-        error_code: data.error_code || 0,
-        pump_state: data.pump_state || 0,
-        last_pump_action: data.last_pump_action || "Không có",
-        control_mode: data.control_mode || "Auto",
-      };
+      if (data.feeds && data.feeds.length > 0) {
+        // Tìm feed đầu tiên có dữ liệu thực tế (không phải null)
+        const latestFeedWithData = data.feeds.find(feed => 
+          feed.field1 !== null && 
+          feed.field2 !== null && 
+          feed.field3 !== null
+        );
 
-      setSensorData(newSensorData);
-      
-      // Lưu sensorData vào localStorage để background task sử dụng
-      localStorage.setItem('currentSensorData', JSON.stringify(newSensorData));
-      
-      setLastUpdate(new Date());
+        if (latestFeedWithData) {
+          console.log("📊 Feed có dữ liệu:", latestFeedWithData);
+          
+          const newSensorData = {
+            temperature: parseFloat(latestFeedWithData.field1) || 0,
+            air_humidity: parseFloat(latestFeedWithData.field2) || 0,
+            soil_humidity: parseFloat(latestFeedWithData.field3) || 0,
+            soil_analog: parseInt(latestFeedWithData.field4) || 0,
+            device_mode: parseInt(latestFeedWithData.field7) === 1 ? "Online" : "Offline",
+            error_code: 0,
+            pump_state: parseInt(latestFeedWithData.field5) || 0,
+            last_pump_action: "ThingSpeak - " + (latestFeedWithData.created_at || "Không có"),
+            control_mode: parseInt(latestFeedWithData.field6) === 1 ? "Auto" : "Manual",
+          };
+
+          setSensorData(newSensorData);
+          localStorage.setItem("currentSensorData", JSON.stringify(newSensorData));
+          setLastUpdate(new Date());
+        } else {
+          console.log("⚠️ Không tìm thấy feed có dữ liệu");
+          // Giữ nguyên dữ liệu cũ nếu không tìm thấy feed mới
+        }
+      } else {
+        throw new Error("Không có dữ liệu từ ThingSpeak");
+      }
     } catch (error) {
-      console.error("❌ Lỗi khi lấy dữ liệu:", error);
+      console.error("❌ Lỗi khi lấy dữ liệu từ ThingSpeak:", error);
       setSensorData((prev) => ({
         ...prev,
         device_mode: "Offline",
@@ -200,55 +196,70 @@ function Dashboard() {
   // Gửi lệnh điều khiển bơm
   const sendPumpCommand = async (command) => {
     try {
-      const response = await fetch(`${API_BASE}/control?pump=${command}`);
+      const commandValue = command === "on" ? 3 : 4;
+      const url = `${THINGSPEAK_UPDATE_URL}?api_key=${THINGSPEAK_WRITE_API_KEY}&field8=${commandValue}`;
+      
+      console.log(`🔄 Gửi lệnh đến ThingSpeak: ${url}`);
+      const response = await fetch(url);
 
       if (response.ok) {
         const result = await response.text();
-        alert(`✅ ${result}`);
-        setTimeout(fetchSensorData, 1000);
+        console.log(`✅ Phản hồi từ ThingSpeak: ${result}`);
+        
+        toast.success(`✅ Đã gửi lệnh ${command} đến thiết bị`, {
+          position: "top-right", autoClose: 3000,
+        });
+        
+        // Đợi 5 giây rồi cập nhật lại dữ liệu (để Arduino có thời gian xử lý)
+        setTimeout(fetchSensorData, 5000);
       } else {
-        const errorText = await response.text();
-        alert(`❌ ${errorText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
       console.error("❌ Lỗi khi gửi lệnh:", error);
-      alert("❌ Không thể kết nối đến thiết bị");
+      toast.error("❌ Không thể gửi lệnh đến thiết bị", {
+        position: "top-right", autoClose: 5000,
+      });
     }
   };
 
-  // Chuyển đổi chế độ điều khiển
+  // Chuyển chế độ
   const changeControlMode = async (mode) => {
     try {
-      const response = await fetch(`${API_BASE}/mode/${mode}`);
+      const commandValue = mode === "auto" ? 1 : 2;
+      const url = `${THINGSPEAK_UPDATE_URL}?api_key=${THINGSPEAK_WRITE_API_KEY}&field8=${commandValue}`;
+      
+      console.log(`🔄 Chuyển chế độ qua ThingSpeak: ${url}`);
+      const response = await fetch(url);
 
       if (response.ok) {
         const result = await response.text();
-        alert(`✅ ${result}`);
-        setTimeout(fetchSensorData, 1000);
+        console.log(`✅ Phản hồi từ ThingSpeak: ${result}`);
+        
+        toast.success(`✅ Đã chuyển sang chế độ ${mode === "auto" ? "TỰ ĐỘNG" : "THỦ CÔNG"}`, {
+          position: "top-right", autoClose: 3000,
+        });
+        
+        setTimeout(fetchSensorData, 5000);
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
       console.error("❌ Lỗi khi chuyển chế độ:", error);
-      alert("❌ Không thể kết nối đến thiết bị");
+      toast.error("❌ Không thể chuyển chế độ", {
+        position: "top-right", autoClose: 5000,
+      });
     }
   };
 
   useEffect(() => {
     fetchSensorData();
-
-    // Khởi động global interval khi component mount
     startGlobalInterval();
-
-    // Interval để fetch sensor data (10 giây)
-    const sensorInterval = setInterval(fetchSensorData, 10000);
-
-    return () => {
-      // Chỉ cleanup sensor interval, giữ nguyên global interval
-      clearInterval(sensorInterval);
-      console.log("🧹 Cleanup sensor interval, giữ background interval");
-    };
+    const sensorInterval = setInterval(fetchSensorData, 20000);
+    return () => clearInterval(sensorInterval);
   }, []);
 
-  // Các hàm render giữ nguyên...
+  // Các hàm render GIỮ NGUYÊN
   const renderErrorStatus = () => {
     switch (sensorData.error_code) {
       case 1:
@@ -280,7 +291,7 @@ function Dashboard() {
     const isOnline = sensorData.device_mode === "Online";
     return (
       <div className={`alert ${isOnline ? "alert-success" : "alert-warning"}`}>
-        {isOnline ? "🟢 Online" : "🟡 Offline"} | IP: 10.195.173.178
+        {isOnline ? "🟢 Online" : "🟡 Offline"} | ThingSpeak Channel: {THINGSPEAK_CHANNEL_ID}
       </div>
     );
   };
@@ -310,7 +321,7 @@ function Dashboard() {
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Loading...</span>
               </div>
-              <span className="ms-2">Đang kết nối đến ESP 10.20.42.178...</span>
+              <span className="ms-2">Đang kết nối đến ThingSpeak...</span>
             </div>
           </div>
         </div>
@@ -345,6 +356,36 @@ function Dashboard() {
             </div>
           </div>
 
+          {/* ThingSpeak Info Card */}
+          <div className="row m-3">
+            <div className="col-12">
+              <div className="card shadow">
+                <div className="card-body">
+                  <h5 className="card-title">☁️ ThingSpeak Cloud Platform</h5>
+                  <div className="row">
+                    <div className="col-md-6">
+                      {/* <p><strong>Channel ID:</strong> {THINGSPEAK_CHANNEL_ID}</p>
+                      <p><strong>Read API Key:</strong> {THINGSPEAK_READ_API_KEY}</p> */}
+                      <p><strong>Status:</strong> <span className="text-success">✅ Đang hoạt động</span></p>
+                    </div>
+                    <div className="col-md-6">
+                      {/* <p><strong>Cập nhật:</strong> Mỗi 20 giây</p>
+                      <p><strong>Điều khiển:</strong> Qua Field 8</p> */}
+                      <a 
+                        href={`https://thingspeak.com/channels/${THINGSPEAK_CHANNEL_ID}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="btn btn-outline-primary btn-sm"
+                      >
+                        📊 Mở ThingSpeak Dashboard
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Auto Data Creation Control */}
           <div className="row m-3">
             <div className="col-12">
@@ -353,24 +394,32 @@ function Dashboard() {
                   <h5 className="card-title">📊 Tự động tạo dữ liệu</h5>
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
-                      <span className={autoCreateEnabled ? "text-success" : "text-secondary"}>
-                        {autoCreateEnabled ? "🟢 Đang chạy" : "🔴 Đã dừng"} - 
+                      <span
+                        className={
+                          autoCreateEnabled ? "text-success" : "text-secondary"
+                        }
+                      >
+                        {autoCreateEnabled ? "🟢 Đang chạy" : "🔴 Đã dừng"} -
                         Tạo dữ liệu mỗi 1 giờ
                       </span>
                       <br />
                       <small className="text-muted">
-                        {autoCreateEnabled 
-                          ? "Dữ liệu sẽ tiếp tục được tạo ngay cả khi bạn rời trang" 
+                        {autoCreateEnabled
+                          ? "Dữ liệu sẽ tiếp tục được tạo ngay cả khi bạn rời trang"
                           : "Tính năng tự động tạo đã bị tắt"}
                       </small>
                     </div>
                     <div className="btn-group">
                       <button
                         type="button"
-                        className={`btn ${autoCreateEnabled ? "btn-warning" : "btn-success"}`}
+                        className={`btn ${
+                          autoCreateEnabled ? "btn-warning" : "btn-success"
+                        }`}
                         onClick={toggleAutoCreate}
                       >
-                        {autoCreateEnabled ? "🛑 Dừng tự động" : "🔄 Bật tự động"}
+                        {autoCreateEnabled
+                          ? "🛑 Dừng tự động"
+                          : "🔄 Bật tự động"}
                       </button>
                       <button
                         type="button"
@@ -386,7 +435,7 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Sensor Data Cards - Giữ nguyên CSS của bạn */}
+          {/* Sensor Data Cards - GIỮ NGUYÊN CSS CỦA BẠN */}
           <div id="data-dashboard" className="row m-3 mt-2">
             <div className="col-md-4 mb-3">
               <div className="card w-100 shadow text-center p-4">
@@ -481,6 +530,9 @@ function Dashboard() {
                       👨‍💻 Thủ công
                     </button>
                   </div>
+                  <small className="text-muted mt-2">
+                    * Gửi lệnh qua ThingSpeak Field 8
+                  </small>
                 </div>
               </div>
             </div>
@@ -523,6 +575,9 @@ function Dashboard() {
                       </small>
                     </div>
                   )}
+                  <small className="text-muted mt-2">
+                    * Gửi lệnh qua ThingSpeak Field 8
+                  </small>
                 </div>
               </div>
             </div>
@@ -532,9 +587,9 @@ function Dashboard() {
             <div className="col">
               <div className="d-flex justify-content-between align-items-center">
                 <small className="text-muted">
-                  Địa chỉ ESP: 10.20.42.178 | Cập nhật:{" "}
-                  {lastUpdate.toLocaleTimeString()} | 
-                  Auto-data: {autoCreateEnabled ? "🟢 ON" : "🔴 OFF"}
+                  ThingSpeak Channel: {THINGSPEAK_CHANNEL_ID} | Cập nhật:{" "}
+                  {lastUpdate.toLocaleTimeString()} | Auto-data:{" "}
+                  {autoCreateEnabled ? "🟢 ON" : "🔴 OFF"}
                 </small>
                 <button
                   type="button"
