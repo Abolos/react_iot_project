@@ -28,6 +28,12 @@ function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [autoCreateEnabled, setAutoCreateEnabled] = useState(true);
 
+  // State cho ngưỡng bơm
+  const [pumpThresholds, setPumpThresholds] = useState({
+    lower: 16,   // Ngưỡng bật bơm (%)
+    upper: 32    // Ngưỡng tắt bơm (%)
+  });
+
   // ThingSpeak Configuration
   const THINGSPEAK_CHANNEL_ID = "3147158";
   const THINGSPEAK_READ_API_KEY = "KJUWWQ7XIZ0K40QV";
@@ -135,12 +141,11 @@ function Dashboard() {
     }
   };
 
-  // Fetch data từ ThingSpeak - SỬA PHẦN NÀY
+  // Fetch data từ ThingSpeak
   const fetchSensorData = async () => {
     try {
       console.log("🔄 Đang kết nối đến ThingSpeak...");
       
-      // Lấy nhiều kết quả hơn để tìm entry có dữ liệu
       const url = `${THINGSPEAK_FEED_URL}?api_key=${THINGSPEAK_READ_API_KEY}&results=10`;
       
       const response = await fetch(url);
@@ -150,7 +155,6 @@ function Dashboard() {
       console.log("✅ Dữ liệu nhận được từ ThingSpeak:", data);
 
       if (data.feeds && data.feeds.length > 0) {
-        // Tìm feed đầu tiên có dữ liệu thực tế (không phải null)
         const latestFeedWithData = data.feeds.find(feed => 
           feed.field1 !== null && 
           feed.field2 !== null && 
@@ -174,10 +178,24 @@ function Dashboard() {
 
           setSensorData(newSensorData);
           localStorage.setItem("currentSensorData", JSON.stringify(newSensorData));
+          
+          // Cập nhật ngưỡng bơm từ Field 9 (Command Response)
+          if (latestFeedWithData.field9) {
+            const thresholdData = latestFeedWithData.field9;
+            if (thresholdData.startsWith('thresholds:')) {
+              const parts = thresholdData.split(':');
+              if (parts.length === 3) {
+                setPumpThresholds({
+                  lower: parseFloat(parts[1]) || 16,
+                  upper: parseFloat(parts[2]) || 32
+                });
+              }
+            }
+          }
+          
           setLastUpdate(new Date());
         } else {
           console.log("⚠️ Không tìm thấy feed có dữ liệu");
-          // Giữ nguyên dữ liệu cũ nếu không tìm thấy feed mới
         }
       } else {
         throw new Error("Không có dữ liệu từ ThingSpeak");
@@ -190,6 +208,49 @@ function Dashboard() {
       }));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Hàm gửi ngưỡng bơm đến ThingSpeak
+  const sendPumpThresholds = async () => {
+    try {
+      // Kiểm tra tính hợp lệ của ngưỡng
+      if (pumpThresholds.lower >= pumpThresholds.upper) {
+        toast.error("❌ Ngưỡng bật phải nhỏ hơn ngưỡng tắt!", {
+          position: "top-right", autoClose: 5000,
+        });
+        return;
+      }
+
+      if (pumpThresholds.lower < 0 || pumpThresholds.upper > 100) {
+        toast.error("❌ Ngưỡng phải nằm trong khoảng 0-100%!", {
+          position: "top-right", autoClose: 5000,
+        });
+        return;
+      }
+
+      // Gửi ngưỡng bơm qua Field 8 với format: "threshold:lower:upper"
+      const commandValue = `threshold:${pumpThresholds.lower}:${pumpThresholds.upper}`;
+      const url = `${THINGSPEAK_UPDATE_URL}?api_key=${THINGSPEAK_WRITE_API_KEY}&field8=${encodeURIComponent(commandValue)}`;
+      
+      console.log(`🔄 Gửi ngưỡng bơm đến ThingSpeak: ${url}`);
+      const response = await fetch(url);
+
+      if (response.ok) {
+        toast.success(`✅ Đã cập nhật ngưỡng bơm: Bật < ${pumpThresholds.lower}%, Tắt > ${pumpThresholds.upper}%`, {
+          position: "top-right", autoClose: 3000,
+        });
+        
+        // Đợi 5 giây rồi cập nhật lại dữ liệu
+        setTimeout(fetchSensorData, 5000);
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("❌ Lỗi khi gửi ngưỡng bơm:", error);
+      toast.error("❌ Không thể cập nhật ngưỡng bơm", {
+        position: "top-right", autoClose: 5000,
+      });
     }
   };
 
@@ -210,7 +271,6 @@ function Dashboard() {
           position: "top-right", autoClose: 3000,
         });
         
-        // Đợi 5 giây rồi cập nhật lại dữ liệu (để Arduino có thời gian xử lý)
         setTimeout(fetchSensorData, 5000);
       } else {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -259,7 +319,7 @@ function Dashboard() {
     return () => clearInterval(sensorInterval);
   }, []);
 
-  // Các hàm render GIỮ NGUYÊN
+  // Các hàm render
   const renderErrorStatus = () => {
     switch (sensorData.error_code) {
       case 1:
@@ -364,13 +424,10 @@ function Dashboard() {
                   <h5 className="card-title">☁️ ThingSpeak Cloud Platform</h5>
                   <div className="row">
                     <div className="col-md-6">
-                      {/* <p><strong>Channel ID:</strong> {THINGSPEAK_CHANNEL_ID}</p>
-                      <p><strong>Read API Key:</strong> {THINGSPEAK_READ_API_KEY}</p> */}
                       <p><strong>Status:</strong> <span className="text-success">✅ Đang hoạt động</span></p>
+                      <p><strong>Channel:</strong> {THINGSPEAK_CHANNEL_ID}</p>
                     </div>
                     <div className="col-md-6">
-                      {/* <p><strong>Cập nhật:</strong> Mỗi 20 giây</p>
-                      <p><strong>Điều khiển:</strong> Qua Field 8</p> */}
                       <a 
                         href={`https://thingspeak.com/channels/${THINGSPEAK_CHANNEL_ID}`} 
                         target="_blank" 
@@ -380,6 +437,79 @@ function Dashboard() {
                         📊 Mở ThingSpeak Dashboard
                       </a>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Điều chỉnh ngưỡng bơm */}
+          <div className="row m-3">
+            <div className="col-12">
+              <div className="card shadow">
+                <div className="card-body">
+                  <h5 className="card-title">🎯 Điều chỉnh ngưỡng bơm tự động</h5>
+                  <div className="row">
+                    <div className="col-md-5">
+                      <div className="mb-3">
+                        <label className="form-label">
+                          Ngưỡng BẬT bơm (khi độ ẩm dưới %):
+                        </label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min="0"
+                          max="100"
+                          value={pumpThresholds.lower}
+                          onChange={(e) => setPumpThresholds(prev => ({
+                            ...prev,
+                            lower: parseInt(e.target.value) || 0
+                          }))}
+                        />
+                        <small className="text-muted">
+                          Máy bơm sẽ tự động BẬT khi độ ẩm đất dưới ngưỡng này
+                        </small>
+                      </div>
+                    </div>
+                    <div className="col-md-5">
+                      <div className="mb-3">
+                        <label className="form-label">
+                          Ngưỡng TẮT bơm (khi độ ẩm trên %):
+                        </label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min="0"
+                          max="100"
+                          value={pumpThresholds.upper}
+                          onChange={(e) => setPumpThresholds(prev => ({
+                            ...prev,
+                            upper: parseInt(e.target.value) || 0
+                          }))}
+                        />
+                        <small className="text-muted">
+                          Máy bơm sẽ tự động TẮT khi độ ẩm đất trên ngưỡng này
+                        </small>
+                      </div>
+                    </div>
+                    <div className="col-md-2 d-flex align-items-end">
+                      <button
+                        type="button"
+                        className="btn btn-primary w-100"
+                        onClick={sendPumpThresholds}
+                        disabled={sensorData.device_mode !== "Online"}
+                      >
+                        💾 Lưu ngưỡng
+                      </button>
+                    </div>
+                  </div>
+                  <div className="alert alert-info mt-2">
+                    <small>
+                      <strong>Ngưỡng hiện tại:</strong> BẬT bơm khi độ ẩm &lt; {pumpThresholds.lower}% 
+                      | TẮT bơm khi độ ẩm &gt; {pumpThresholds.upper}%
+                      {sensorData.device_mode !== "Online" && 
+                        " - ⚠️ Chỉ có thể thay đổi khi thiết bị Online"}
+                    </small>
                   </div>
                 </div>
               </div>
@@ -435,7 +565,7 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Sensor Data Cards - GIỮ NGUYÊN CSS CỦA BẠN */}
+          {/* Sensor Data Cards */}
           <div id="data-dashboard" className="row m-3 mt-2">
             <div className="col-md-4 mb-3">
               <div className="card w-100 shadow text-center p-4">
@@ -479,12 +609,12 @@ function Dashboard() {
                 <div className="mt-2">
                   <small
                     className={`badge ${
-                      sensorData.soil_humidity < 35
+                      sensorData.soil_humidity < pumpThresholds.lower
                         ? "bg-warning"
                         : "bg-success"
                     }`}
                   >
-                    {sensorData.soil_humidity < 35
+                    {sensorData.soil_humidity < pumpThresholds.lower
                       ? "🌵 Cần tưới nước"
                       : "💧 Đủ độ ẩm"}
                   </small>
@@ -589,7 +719,7 @@ function Dashboard() {
                 <small className="text-muted">
                   ThingSpeak Channel: {THINGSPEAK_CHANNEL_ID} | Cập nhật:{" "}
                   {lastUpdate.toLocaleTimeString()} | Auto-data:{" "}
-                  {autoCreateEnabled ? "🟢 ON" : "🔴 OFF"}
+                  {autoCreateEnabled ? "🟢 ON" : "🔴 OFF"} | Ngưỡng bơm: {pumpThresholds.lower}%-{pumpThresholds.upper}%
                 </small>
                 <button
                   type="button"

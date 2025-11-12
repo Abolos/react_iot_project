@@ -18,6 +18,7 @@ import CreateTemplete from "./components/Main/templetes/CreateTemplete";
 import UpdateTemplete from "./components/Main/templetes/UpdateTemplete";
 import CreateData from "./components/Main/datas/CreateData";
 import UpdateData from "./components/Main/datas/UpdateData";
+import Chatbot from "./components/Chatbot/Chatbot";
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
         <Route path="/templetes/admin/store" element={<CreateTemplete />} />
         <Route path="/templetes/admin/update/:id" element={<UpdateTemplete />} />
       </Routes>
+      <Chatbot />
     </div>
   );
 }
